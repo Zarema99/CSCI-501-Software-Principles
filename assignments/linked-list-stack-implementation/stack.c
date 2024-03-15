@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <limits.h>
 
+
 // Creates a new empty stack on the heap
 stack* create_stack(){
 
@@ -10,10 +11,8 @@ stack* create_stack(){
 	stack *stk_ptr = (stack*)malloc(sizeof(stack));
 
 	stk_ptr->stack_size = 0;
-	stk_ptr->array_size = 5;	//can be different
 
-	//Dynamically allocate memory for array
-	stk_ptr->values = (int*)calloc(stk_ptr->array_size, sizeof(int));
+	stk_ptr->top = NULL;
 
 	return stk_ptr;
 }
@@ -21,45 +20,38 @@ stack* create_stack(){
 // Destroys the stack, and frees up its memory
 void destroy_stack(stack *stk){
 
-	//Free memory for array
-	free(stk->values);
+	if (stk->stack_size > 0){    //if stack size = 0, no need to destroy nodes
 
-	//Free memory for stack
+		//Destroying all nodes
+		node *prev = stk->top;
+		node *next = stk->top->link;
+
+		while(next != NULL){
+
+			//printf("Freeing %i\n", prev->value);    used to check the correctness of the code
+			free(prev);
+			prev = next;
+			next = next->link;
+		}
+		//printf("Freeing %i\n", prev->value);    used to check the correctness of the code
+		free(prev);
+	}
+
+	//Freeing the memory for stack
 	free(stk);
 }
 
 // Adds the value val to the top of the stack
 void push(stack *stk, int val){
 
-	if (stk->stack_size < stk->array_size){
+	//Dynamically allocate a new node
+	node *new_node = (node*)malloc(sizeof(node));
 
-		//Pointer arithmetics
-		*(stk -> values + stk->stack_size) = val;
-		stk->stack_size ++;
+	new_node->value = val;
+	new_node->link = stk->top;
 
-	}else{
-
-		//Double array size and dynamically allocate memory
-		stk->array_size = 2*stk->array_size;
-		int *values_new = (int*)calloc(stk->array_size, sizeof(int));
-
-		int i;
-
-		//Copying values
-		for (i = 0; i < stk->array_size/2; i++){
-
-			*(values_new + i) = *(stk -> values + i);
-			//printf("Copying %i\n", *(stk -> values + i));    used to check the correctness of the code
-		}
-
-		//Free memory for old array
-		free(stk->values);
-
-		stk->values = values_new;
-
-		*(stk -> values + stk->stack_size) = val;
-		stk->stack_size ++;
-	}
+	stk->top = new_node;
+	stk->stack_size ++;
 }
 
 // Removes and returns the topmost item of the stack
@@ -73,20 +65,29 @@ int pop(stack *stk){
 		return INT_MIN;
 	}
 
+	//Pointer to the current top
+	node *old_top = stk->top;
+
+	//New top is a next node
+	stk->top = stk->top->link;
+
 	//Old top value
-	int top_old = peek_top(stk);
+	int top_old_val = old_top->value;
+
+	//printf("Freeing %i\n", old_top->value);    used to check the correctness of the code
+
+	//Freeing memory for the old top
+	free(old_top);
 
 	stk->stack_size --;
 
-	return top_old;
+	return top_old_val;
 }
 
 // Returns the topmost item of the stack, without changing the stack
 int peek_top(stack *stk){
 
-	int top = *(stk -> values + stk -> stack_size - 1);
-
-	return top;
+	return stk->top->value;
 }
 
 // Returns the number of items on the stack
@@ -98,26 +99,48 @@ size_t stack_size(stack *stk){
 // Removes all of the items from the stack
 void clear_stack(stack *stk){
 
-	//Set stack size to zero
-	stk->stack_size = 0;
+	if (stk->stack_size > 0){    //if stack size = 0, no need to clear
+
+		//Destroying all nodes
+		node *prev = stk->top;
+		node *next = stk->top->link;
+
+		while(next != NULL){
+
+			//printf("Freeing %i\n", prev->value);    used to check the correctness of the code
+			free(prev);
+			prev = next;
+			next = next->link;
+		}
+		//printf("Freeing %i\n", prev->value);    used to check the correctness of the code
+		free(prev);
+
+		//Set stack size to zero and top to NULL
+		stk->stack_size = 0;
+		stk->top = NULL;
+	}
 }
 
-// Outputs the items in the stack to the console window (from bottom to top)
+// Outputs the items in the stack to the console window (from top to bottom)
 void print_stack(stack *stk){
 
-	int i;
+	printf("top [ ");
 
-	printf("bottom [ ");
+	//Temporary node
+	node *temp = stk->top;
 
-	for (i = 0; i < stk->stack_size; i++){
+	while (temp != NULL){
 
-		if (i != 0){
+		printf("%i", temp->value);
+
+		if (temp->link != NULL){
+
 			printf(", ");
+
 		}
 
-		printf("%i", *(stk -> values + i));
+		temp = temp->link;
 	}
 
-	printf(" ] top\n");
-
+	printf(" ] bottom\n");
 }
