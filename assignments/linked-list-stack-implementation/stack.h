@@ -4,11 +4,16 @@
 
 #include <stdlib.h>
 
+typedef struct _node {
+	int value;
+	struct _node *link;
+} node;
+
 typedef struct {
 	size_t stack_size;
-	size_t array_size;
-	int *values;
+	node *top;
 } stack;
+
 
 // Creates a new empty stack on the heap
 stack* create_stack();
